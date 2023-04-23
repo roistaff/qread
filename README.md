@@ -1,4 +1,4 @@
-# qread
+# Quick Read
 A simple real time Markdown viewer
 # Install
 ```bash
