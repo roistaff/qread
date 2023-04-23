@@ -8,6 +8,7 @@ import(
 	"fmt"
 	"strings"
 	"time"
+	"io"
 )
 func getDir()string{
 	dir, err := os.Getwd()
@@ -109,6 +110,7 @@ func OpenServer(path string){
 		select {}
 }
 func Show(){
+	Start()
 	dir := getDir()
 	path := dir +"/" +os.Args[1]
 	getMain(path)
@@ -122,13 +124,34 @@ func AAprint(){
  \__\_\ \__,_||_| \___||_|\_\ |_| \_\ \___| \__,_| \__,_|`
 	fmt.Println(aa)
 }
+func DownFile(url string,path string){
+	response, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer response.Body.Close()
+	file, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		panic(err)
+	}
+}
 func Start(){
 	home := getHomeDir()
-	if _, err := os.Stat(home + "/qread"); err != nil {
-		if err := os.Mkdir(home+"/qread", 0777); err != nil {
-			fmt.Println(err)
-		}	
-	}
+	dirName := home+"/qread"
+    if _, err := os.Stat(dirName); os.IsNotExist(err) {
+        err := os.Mkdir(dirName, 0755)
+        if err != nil {
+            fmt.Println("Error creating directory:", err)
+        } else {
+			DownFile("https://raw.githubusercontent.com/roistaff/qread/main/template/template.html",dirName+"/template.html")
+			DownFile("https://raw.githubusercontent.com/roistaff/qread/main/template/style.css",dirName+"/style.css")
+		}
+    }
 }
 func main(){
 	args := os.Args
