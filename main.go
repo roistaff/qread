@@ -160,13 +160,15 @@ func main(){
 	if len(args) == 1 {
 		rogo := color.GreenString("QucikRead")
 		help := color.New(color.FgBlack, color.BgWhite)
-		fmt.Printf("Welcome to "+ rogo +"! \n If you want more about "+ rogo +",please type " )
+		version := color.YellowString("v0.1")
+		fmt.Printf("Welcome to "+ rogo +"! \n "+version+" \n If you want more about "+ rogo +",please type " )
 		help.Print("qread -h")
 		link := color.HiBlueString("https://github.com/roistaff/qread")
 		fmt.Println(" or visit " + link)
 		os.Exit(0)
 	}else if args[1] == "-h"{
-		
+	help := "A simple real time markdown viewer\nVersion:0.1\nUsage\n  qread [filename]\n  After,please open http://localhost:8000 on your browser.\n If you want more about Quick Read,visit https://github.com/roistaff/qread"
+	fmt.Println(help)
 }else{
 	Show()
 }
