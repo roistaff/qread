@@ -9,6 +9,82 @@ import(
 	"strings"
 	"time"
 )
+
+var template string = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Your Markdown</title>
+    <link rel="stylesheet" href="style.css" referrerpolicy="no-referrer" />
+    <style>
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 45px;
+        }
+    
+        @media (max-width: 767px) {
+            .markdown-body {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="markdown-body">
+        {{ . }}
+    </div>
+    <script>
+function getAPI() {
+  const url = 'http://localhost:8000/api/status';
+  return fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then(data => {
+      console.log(data);
+      return data;
+    })
+    .catch(error => {
+      console.error('There was a problem with the fetch operation:', error);
+    });
+}
+
+function checkFile() {
+  getAPI().then(data => {
+    if (data === 'update') {
+      window.location.reload();
+    }
+  });
+}
+
+window.setInterval(checkFile, 1000);
+
+    </script>
+</body>
+</html>
+`
+func getDir()string{
+	dir, err := os.Getwd()
+	if err != nil {panic(err)}
+	return dir
+}
+func GetfileTime(path string)time.Time{
+	file ,err:= os.Stat(path)
+	if err != nil {
+		panic(err)
+	}
+	time := file.ModTime()
+	return time
+}
 func ReadFile(path string)string{
 	bytes, err := os.ReadFile(path)
 	if err != nil {
@@ -32,35 +108,27 @@ func getHTML(md []byte)string{
 	html := string(blackfriday.MarkdownCommon(md))
 	return html
 }
-func Update(path string){
+func getMain(path string){
 	mdtext := ReadFile(path)
 	mdhtml := getHTML([]byte(mdtext))
-    str := ReadFile("template.html")
-    html := strings.Replace(str, "{{ . }}", mdhtml, 1)
-    WriteFile("page/index.html",html)
+    html := strings.Replace(template, "{{ . }}", mdhtml, 1)
+	dir := getDir()
+    WriteFile(dir+"/index.html",html)
 }
-func GetfileTime(path string)time.Time{
-	file ,err:= os.Stat(path)
-	if err != nil {
-		panic(err)
-	}
-	time := file.ModTime()
-	return time
+func Update(path string){
+	getMain(path)
 }
 func OpenServer(path string){
 	var status string = "ok"
-	mdtext := ReadFile(path)
-	mdhtml := getHTML([]byte(mdtext))
-    str := ReadFile("template.html")
-    html := strings.Replace(str, "{{ . }}", mdhtml, 1)
-    WriteFile("page/index.html",html)
+	getMain(path)
 	go func(){
-	fs := http.FileServer(http.Dir("page"))
-    http.Handle("/", fs)
+	dir := getDir()
+	fs := http.FileServer(http.Dir(dir))
+	http.Handle("/", fs)
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, status)
 	})
-    err := http.ListenAndServe(":3000", nil)
+    err := http.ListenAndServe(":8000", nil)
 	if err != nil {
 		if err == http.ErrServerClosed {
 			color.Red("× Server closed:", err)
@@ -73,7 +141,7 @@ func OpenServer(path string){
 	}
 	}()
 	go func() {
-		link := color.GreenString("http://localhost:3000/")
+		link := color.GreenString("http://localhost:8000/")
 		fmt.Println("You can see your markdown on "+ link)
 		var lasttime time.Time = GetfileTime(path)
 			for {
@@ -95,14 +163,6 @@ func OpenServer(path string){
 
 		select {}
 }
-func getDir()string{
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	return dir
-}
-
 func Show(){
 	dir := getDir()
 	path := dir +"/" +os.Args[1]
