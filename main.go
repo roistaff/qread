@@ -9,73 +9,17 @@ import(
 	"strings"
 	"time"
 )
-
-var template string = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Your Markdown</title>
-    <link rel="stylesheet" href="style.css" referrerpolicy="no-referrer" />
-    <style>
-        .markdown-body {
-            box-sizing: border-box;
-            min-width: 200px;
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 45px;
-        }
-    
-        @media (max-width: 767px) {
-            .markdown-body {
-                padding: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="markdown-body">
-        {{ . }}
-    </div>
-    <script>
-function getAPI() {
-  const url = 'http://localhost:8000/api/status';
-  return fetch(url)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then(data => {
-      console.log(data);
-      return data;
-    })
-    .catch(error => {
-      console.error('There was a problem with the fetch operation:', error);
-    });
-}
-
-function checkFile() {
-  getAPI().then(data => {
-    if (data === 'update') {
-      window.location.reload();
-    }
-  });
-}
-
-window.setInterval(checkFile, 1000);
-
-    </script>
-</body>
-</html>
-`
 func getDir()string{
 	dir, err := os.Getwd()
 	if err != nil {panic(err)}
 	return dir
+}
+func getHomeDir()string{
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+	return home
 }
 func GetfileTime(path string)time.Time{
 	file ,err:= os.Stat(path)
@@ -109,21 +53,22 @@ func getHTML(md []byte)string{
 	return html
 }
 func getMain(path string){
+	home := getHomeDir()
 	mdtext := ReadFile(path)
 	mdhtml := getHTML([]byte(mdtext))
+	template := ReadFile(home + "/qread/template.html")
     html := strings.Replace(template, "{{ . }}", mdhtml, 1)
-	dir := getDir()
-    WriteFile(dir+"/index.html",html)
+    WriteFile(home+"/qread/index.html",html)
 }
 func Update(path string){
 	getMain(path)
 }
 func OpenServer(path string){
 	var status string = "ok"
-	getMain(path)
 	go func(){
-	dir := getDir()
-	fs := http.FileServer(http.Dir(dir))
+	home := getHomeDir()
+	server := home + "/qread"
+	fs := http.FileServer(http.Dir(server))
 	http.Handle("/", fs)
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, status)
@@ -166,6 +111,7 @@ func OpenServer(path string){
 func Show(){
 	dir := getDir()
 	path := dir +"/" +os.Args[1]
+	getMain(path)
 	OpenServer(path)
 }
 func AAprint(){
@@ -175,6 +121,14 @@ func AAprint(){
 | |_| || |_| || || (__ |   <  |  _ < |  __/| (_| || (_| |
  \__\_\ \__,_||_| \___||_|\_\ |_| \_\ \___| \__,_| \__,_|`
 	fmt.Println(aa)
+}
+func Start(){
+	home := getHomeDir()
+	if _, err := os.Stat(home + "/qread"); err != nil {
+		if err := os.Mkdir(home+"/qread", 0777); err != nil {
+			fmt.Println(err)
+		}	
+	}
 }
 func main(){
 	args := os.Args
