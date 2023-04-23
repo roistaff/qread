@@ -60,7 +60,6 @@ func OpenServer(path string){
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, status)
 	})
-	fmt.Println("You can see your markdown on http://localhost:3000/")
     err := http.ListenAndServe(":3000", nil)
 	if err != nil {
 		if err == http.ErrServerClosed {
@@ -74,6 +73,8 @@ func OpenServer(path string){
 	}
 	}()
 	go func() {
+		link := color.GreenString("http://localhost:3000/")
+		fmt.Println("You can see your markdown on "+ link)
 		var lasttime time.Time = GetfileTime(path)
 			for {
 				time.Sleep(1 * time.Second)
@@ -81,11 +82,11 @@ func OpenServer(path string){
 					fmt.Printf("\r We are waiting for you visit our html...")
 				}else{
 					fmt.Println("")
-					fmt.Println("File had updated.")
+					color.Yellow("! File had updated.")
 					Update(path)
 					status = "update"
 					lasttime = GetfileTime(path)
-					fmt.Println("HTML had updated")
+					color.Green("○ HTML had updated")
 					time.Sleep(1 * time.Second)
 					status = "ok"
 				}
@@ -123,7 +124,7 @@ func main(){
 		rogo := color.GreenString("QucikRead")
 		help := color.New(color.FgBlack, color.BgWhite)
 		fmt.Printf("Welcome to "+ rogo +"! \n If you want more about "+ rogo +",please type " )
-		help.Print("'qread -h'")
+		help.Print("qread -h")
 		link := color.HiBlueString("https://github.com/roistaff/qread")
 		fmt.Println(" or visit " + link)
 		os.Exit(0)
